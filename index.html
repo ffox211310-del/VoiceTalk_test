@@ -114,7 +114,10 @@ function addMsg(text, role){
 async function initModel(){
   setStatus('Whisper tiny 読み込み中... (初回39MB)', '');
   try{
-    transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', { quantized: true });
+    
+// この1行を変えるだけ
+transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base', { quantized: true });
+    
     setStatus('準備完了 - マイクを押してください', 'on');
     inputEl.placeholder = '話すか、ここに入力...';
     log('MicVAD loaded: ' + typeof MicVAD);
