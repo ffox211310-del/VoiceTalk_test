@@ -1,192 +1,301 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>音声文字起こし</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #f5f5f5;
-      color: #222;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem 1rem;
-    }
-    h1 {
-      font-size: 1.4rem;
-      font-weight: 600;
-      margin-bottom: 1.5rem;
-    }
-    .controls {
-      display: flex;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    button {
-      padding: 0.7rem 1.4rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background 0.15s;
-    }
-    #start {
-      background: #2563eb;
-      color: white;
-    }
-    #start:hover { background: #1d4ed8; }
-    #start:disabled {
-      background: #93c5fd;
-      cursor: not-allowed;
-    }
-    #stop {
-      background: #dc2626;
-      color: white;
-    }
-    #stop:hover { background: #b91c1c; }
-    #stop:disabled {
-      background: #fca5a5;
-      cursor: not-allowed;
-    }
-    #clear {
-      background: #e5e7eb;
-      color: #374151;
-    }
-    #clear:hover { background: #d1d5db; }
-    #status {
-      font-size: 0.9rem;
-      color: #6b7280;
-      margin-bottom: 1rem;
-      min-height: 1.2em;
-    }
-    #transcript {
-      width: 100%;
-      max-width: 640px;
-      min-height: 200px;
-      padding: 1rem;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      background: white;
-      font-size: 1.05rem;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      overflow-y: auto;
-    }
-    .interim {
-      color: #9ca3af;
-    }
-    .note {
-      margin-top: 1.5rem;
-      font-size: 0.8rem;
-      color: #9ca3af;
-      text-align: center;
-      max-width: 480px;
-    }
-  </style>
+<head><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
+</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CronyGO Voice Test Final - PWA Offline</title>
+<meta name="theme-color" content="#0a0a0a">
+<style>
+*{box-sizing:border-box} body{margin:0;background:#0a0a0a;color:#fff;font-family:Inter,system-ui,-apple-system,'Noto Sans JP',sans-serif;min-height:100dvh;display:flex;flex-direction:column}
+header{position:sticky;top:0;z-index:10;background:rgba(10,10,10,.92);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.08);padding:14px 16px}
+.badge{display:inline-flex;padding:3px 8px;border-radius:999px;background:#1a1a1a;border:1px solid rgba(255,255,255,.1);font-size:10px;color:#a1a1aa}
+#status{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#a1a1aa}
+.dot{width:8px;height:8px;border-radius:50%;background:#52525b} .dot.on{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.18)} .dot.hear{background:#ef4444;animation:pulse 1s infinite}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+main{flex:1;max-width:720px;width:100%;margin:0 auto;padding:16px 14px 130px}
+.msg{max-width:82%;padding:12px 14px;border-radius:18px;font-size:14px;line-height:1.6;margin:10px 0;white-space:pre-wrap;word-break:break-word}
+.user{margin-left:auto;background:#fff;color:#000;border-bottom-right-radius:6px}
+.ai{background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-bottom-left-radius:6px}
+.interim{color:#71717a;font-style:italic}
+#transcriptBox{margin-top:12px;padding:12px 14px;border-radius:12px;background:#111;border:1px solid #222;min-height:56px;font-size:14px;line-height:1.6}
+footer{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.08);padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+.composer{max-width:720px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.inputWrap{flex:1;display:flex;align-items:center;gap:8px;height:52px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.inputWrap input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:14px}
+#micBtn{width:54px;height:54px;border-radius:50%;background:#1f1f1f;border:1px solid rgba(255,255,255,.12);color:#e4e4e7;display:grid;place-items:center;cursor:pointer;transition:.15s}
+#micBtn.on{background:#ef4444;border-color:#ef4444;color:#fff;box-shadow:0 0 0 6px rgba(239,68,68,.15)}
+button.icon{width:36px;height:36px;border-radius:50%;border:0;background:#fff;color:#000;display:grid;place-items:center;cursor:pointer}
+.hint{max-width:720px;margin:6px auto 0;color:#52525b;font-size:10px;padding:0 4px}
+</style>
 </head>
 <body>
-  <h1>🎤 音声文字起こし</h1>
-
-  <div class="controls">
-    <button id="start">開始</button>
-    <button id="stop" disabled>停止</button>
-    <button id="clear">クリア</button>
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div style="font-weight:600">CronyGO Voice Test <span style="color:#71717a;font-weight:400">Final</span></div>
+    <span class="badge">PWA Offline Ready · 0MB</span>
   </div>
+  <div id="status"><span id="dot" class="dot"></span><span id="statusText">待機中 - マイクを1回押すと永遠に会話</span></div>
+  <div style="margin-top:8px;font-size:11px;color:#52525b;line-height:1.4">
+    純正 Web Speech API (Chrome) / 重複除去あり / 喋り終わりで自動送信 → 固定返事を音声で返す<br>
+    PWA化してホーム画面追加すれば、オフラインでも動きます。
+  </div>
+</header>
 
-  <div id="status">待機中</div>
-  <div id="transcript" contenteditable="true"></div>
+<main>
+  <div id="chat">
+    <div class="msg ai">準備完了。マイクボタンを1回押してください。あとは喋るだけで自動で送信→音声で返事が返ります。同じ言葉の連続は自動で除去されます。</div>
+  </div>
+  <div id="transcriptBox"><span style="color:#52525b">ここに認識中の文字が出ます...</span></div>
+</main>
 
-  <p class="note">
-    Chrome / Edge 推奨。<br>
-    初回はマイクの許可が必要です。日本語で認識します。
-  </p>
+<footer>
+  <div class="composer">
+    <div class="inputWrap">
+      <input id="inputEl" placeholder="話した内容がここに自動入力されます..." autocomplete="off">
+      <button class="icon" id="sendBtn">↑</button>
+    </div>
+    <button id="micBtn" title="マイク開始">🎤</button>
+    <button class="icon" id="clearBtn" style="background:#1f1f1f;color:#a1a1aa;border:1px solid #222">✕</button>
+  </div>
+  <div class="hint">id: inputEl / micBtn · Engine: webkitSpeechRecognition · fix: consecutive duplicate removal · continuous forever</div>
+</footer>
 
-  <script>
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+<script>
+// ===== 重複除去ロジック (君のリクエストの核心) =====
+function removeConsecutiveDuplicates(text){
+  if(!text || text.length < 2) return text;
+  let t = text;
+  let changed = true;
+  // 末尾で同じ塊が連続してたら削るのを繰り返す
+  // 例: こんにちはこんにちは -> こんにちは
+  // 例: ありがとうありがとう -> ありがとう
+  while(changed){
+    changed = false;
+    const maxLen = Math.min(20, Math.floor(t.length/2));
+    // 長い塊から優先でチェック (短い1文字より長いフレーズを優先)
+    for(let len = maxLen; len >= 1; len--){
+      const a = t.slice(-2*len, -len);
+      const b = t.slice(-len);
+      if(a && a === b){
+        t = t.slice(0, -len);
+        changed = true;
+        break;
+      }
+    }
+  }
+  return t;
+}
 
-    if (!SpeechRecognition) {
-      document.getElementById('status').textContent = 'このブラウザは音声認識に対応していません（Chrome推奨）';
-      document.getElementById('start').disabled = true;
-    } else {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'ja-JP';
-      recognition.continuous = true;      // 連続認識
-      recognition.interimResults = true;  // 途中結果も表示
+function dedupFinalAccumulation(finalText, newChunk){
+  if(!newChunk) return finalText;
+  // 完全に同じfinalが2回来たら無視 (continuousの定番バグ)
+  if(finalText.endsWith(newChunk)) return finalText;
+  // 新しい塊の中自体に連続がある場合も除去
+  newChunk = removeConsecutiveDuplicates(newChunk);
+  let combined = finalText + newChunk;
+  combined = removeConsecutiveDuplicates(combined);
+  return combined;
+}
 
-      const startBtn = document.getElementById('start');
-      const stopBtn  = document.getElementById('stop');
-      const clearBtn = document.getElementById('clear');
-      const status   = document.getElementById('status');
-      const transcript = document.getElementById('transcript');
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const statusText = document.getElementById('statusText');
+const dot = document.getElementById('dot');
+const inputEl = document.getElementById('inputEl');
+const micBtn = document.getElementById('micBtn');
+const sendBtn = document.getElementById('sendBtn');
+const clearBtn = document.getElementById('clearBtn');
+const chat = document.getElementById('chat');
+const transcriptBox = document.getElementById('transcriptBox');
 
-      let finalText = '';
+let recognition = null;
+let isListening = false;
+let finalText = '';
+let lastSentText = '';
 
-      recognition.onstart = () => {
-        status.textContent = '聞いています…';
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-      };
+function setStatus(t, state){
+  statusText.textContent = t;
+  dot.className = 'dot' + (state ? ' '+state : '');
+}
 
-      recognition.onresult = (event) => {
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
-          if (result.isFinal) {
-            finalText += result[0].transcript;
-          } else {
-            interim += result[0].transcript;
+function addMsg(text, role){
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  chat.appendChild(div);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function sendMessage(){
+  const text = inputEl.value.trim();
+  if(!text || text.length < 1) return;
+  if(text === lastSentText){ inputEl.value=''; return; } // 同じ内容の連投防止
+  lastSentText = text;
+  addMsg(text, 'user');
+  inputEl.value = '';
+  finalText = ''; // 送信後にリセット
+  transcriptBox.innerHTML = '<span style="color:#52525b">送信しました。次の発話待機中...</span>';
+
+  setTimeout(async ()=>{
+    const reply = 'こんにちは、音声テストです。聞こえていますよ！';
+    addMsg(reply, 'ai');
+    // 読み上げ中は認識を一時停止して自分の声を拾わない
+    if(recognition && isListening){
+      try{ recognition.stop(); }catch{}
+    }
+    const uttr = new SpeechSynthesisUtterance(reply);
+    uttr.lang = 'ja-JP';
+    uttr.rate = 1.1;
+    uttr.onend = ()=>{
+      if(isListening){
+        setTimeout(()=>{ try{ recognition.start(); }catch{} }, 300);
+        setStatus('待機中... 喋ってください', 'on');
+      }
+    };
+    speechSynthesis.cancel();
+    speechSynthesis.speak(uttr);
+  }, 400);
+}
+
+function initRecognition(){
+  if(!SpeechRecognition){
+    setStatus('このブラウザは音声認識非対応 (Chrome推奨)', '');
+    transcriptBox.textContent = 'Chrome / Edge で開いてください';
+    return null;
+  }
+  const rec = new SpeechRecognition();
+  rec.lang = 'ja-JP';
+  rec.continuous = true; // 永遠に聞く
+  rec.interimResults = true; // 途中結果も出す
+
+  rec.onstart = ()=>{
+    setStatus('聞いています... (永遠モード)', 'hear');
+    dot.classList.add('hear');
+    transcriptBox.innerHTML = '<span class="interim">聞き取り開始...</span>';
+  };
+
+  rec.onresult = (event)=>{
+    let interim = '';
+    for(let i = event.resultIndex; i < event.results.length; i++){
+      const result = event.results[i];
+      const transcript = result[0].transcript;
+      if(result.isFinal){
+        // ★ここで重複除去
+        const before = finalText;
+        finalText = dedupFinalAccumulation(finalText, transcript.trim());
+        if(finalText !== before){
+          // 新しいfinalが追加されたら表示更新
+          transcriptBox.textContent = finalText;
+          // 自動でテキストボックスに乗せて送信
+          inputEl.value = finalText;
+          // ちょっと待ってから自動送信 (文が区切れたタイミング)
+          // 長すぎない場合は即送信
+          if(finalText.length > 1){
+            setTimeout(()=>{ 
+              if(inputEl.value === finalText){ // まだ変わってなければ送信
+                sendMessage();
+              }
+            }, 800);
           }
         }
-        transcript.innerHTML = finalText +
-          (interim ? `<span class="interim">${interim}</span>` : '');
-      };
-
-      recognition.onerror = (event) => {
-        console.error(event.error);
-        if (event.error === 'not-allowed') {
-          status.textContent = 'マイクの使用が許可されていません';
-        } else {
-          status.textContent = 'エラー: ' + event.error;
-        }
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-      };
-
-      recognition.onend = () => {
-        // continuous中に勝手に止まることがあるので、ボタン状態を見て再開するか判断
-        if (!stopBtn.disabled) {
-          // ユーザーが停止していない場合は再開
-          try { recognition.start(); } catch (e) {}
-        } else {
-          status.textContent = '停止中';
-          startBtn.disabled = false;
-        }
-      };
-
-      startBtn.addEventListener('click', () => {
-        finalText = transcript.innerText || '';
-        recognition.start();
-      });
-
-      stopBtn.addEventListener('click', () => {
-        recognition.stop();
-        stopBtn.disabled = true;
-        startBtn.disabled = false;
-        status.textContent = '停止中';
-      });
-
-      clearBtn.addEventListener('click', () => {
-        finalText = '';
-        transcript.innerHTML = '';
-      });
+      }else{
+        interim += transcript;
+      }
     }
-  </script>
-</body>
+    if(interim){
+      // interimも重複除去して表示
+      const cleanedInterim = removeConsecutiveDuplicates(interim);
+      transcriptBox.innerHTML = finalText + `<span class="interim">${cleanedInterim}</span>`;
+    }
+  };
+
+  rec.onerror = (e)=>{
+    console.error(e);
+    if(e.error === 'not-allowed'){
+      setStatus('マイク許可が必要です', '');
+      isListening = false;
+      micBtn.classList.remove('on');
+    }else{
+      setStatus('エラー: '+e.error+' - 再接続中...', '');
+      if(isListening){
+        setTimeout(()=>{ try{ rec.start(); }catch{} }, 1000);
+      }
+    }
+  };
+
+  rec.onend = ()=>{
+    if(isListening){
+      // continuousでも勝手に止まることがあるので自動再開 = 永遠会話
+      setStatus('再接続中...', 'on');
+      setTimeout(()=>{ try{ rec.start(); }catch{} }, 300);
+    }else{
+      setStatus('停止中 - マイクを押すと再開', '');
+      dot.className = 'dot';
+    }
+  };
+
+  return rec;
+}
+
+micBtn.addEventListener('click', async ()=>{
+  if(!recognition) recognition = initRecognition();
+  if(isListening){
+    isListening = false;
+    micBtn.classList.remove('on');
+    try{ recognition.stop(); }catch{}
+    setStatus('停止中', '');
+  }else{
+    try{
+      const s = await navigator.mediaDevices.getUserMedia({audio:true});
+      s.getTracks().forEach(t=>t.stop());
+    }catch(e){
+      alert('マイク許可が必要です: '+e.message);
+      return;
+    }
+    isListening = true;
+    micBtn.classList.add('on');
+    finalText = '';
+    lastSentText = '';
+    try{ recognition.start(); }catch(e){ setTimeout(()=>{ try{ recognition.start(); }catch{} }, 200); }
+  }
+});
+
+sendBtn.addEventListener('click', sendMessage);
+inputEl.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendMessage(); } });
+clearBtn.addEventListener('click', ()=>{
+  finalText=''; lastSentText=''; inputEl.value=''; chat.innerHTML='<div class="msg ai">クリアしました。マイクONで再開してください。</div>'; transcriptBox.innerHTML='<span style="color:#52525b">クリア済み</span>';
+});
+
+recognition = initRecognition();
+
+// PWA: 簡易Service Worker登録 (GitHub PagesでもオフラインでHTML自体はキャッシュされる)
+if('serviceWorker' in navigator){
+  const swCode = `self.addEventListener('install', e=>{ e.waitUntil(caches.open('voice-test-v1').then(c=>c.addAll(['./']))); self.skipWaiting(); }); self.addEventListener('fetch', e=>{ e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))); });`;
+  const blob = new Blob([swCode], {type:'text/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  // GitHub PagesではblobのSWは登録できないことがあるので、失敗しても無視
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+</script>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
 </html>
