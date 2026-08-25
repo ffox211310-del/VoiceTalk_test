@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head><style>
 @font-face {
   font-family: "Optimistic";
@@ -22,412 +22,205 @@
   font-family: "Optimistic Mono", ui-monospace, monospace;
 }
 </style>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>React Artifact</title>
-  <style>*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#root,body,html{min-height:100%}</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>CronyGO Voice Test v0.1 - GitHub Pages</title>
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "@xenova/transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js"
+  }
+}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;500&display=swap');
+*{box-sizing:border-box} body{margin:0;background:#0a0a0a;color:#fff;font-family:'Inter','Noto Sans JP',sans-serif}
+header{position:sticky;top:0;z-index:10;background:rgba(10,10,10,.8);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.08);padding:14px 16px}
+.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:999px;padding:4px 10px;font-size:11px;color:#a1a1aa}
+#status{margin-top:10px;display:flex;gap:8px;align-items:center;font-size:12px;color:#a1a1aa}
+.dot{width:8px;height:8px;border-radius:50%;background:#71717a} .dot.on{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.2)} .dot.hear{background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.2);animation:pulse 1s infinite}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+main{max-width:720px;margin:0 auto;padding:18px 14px 120px}
+.msg{max-width:80%;padding:12px 14px;border-radius:18px;font-size:14px;line-height:1.6;margin:10px 0;white-space:pre-wrap;word-break:break-word}
+.user{margin-left:auto;background:#fff;color:#000;border-bottom-right-radius:6px}
+.ai{background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-bottom-left-radius:6px}
+footer{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.08);padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+.composer{max-width:720px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.inputWrap{flex:1;display:flex;align-items:center;gap:8px;height:50px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06)}
+.inputWrap input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:14px}
+#micBtn{width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:#1f1f1f;color:#e4e4e7;display:grid;place-items:center;cursor:pointer;transition:.15s}
+#micBtn.on{background:#ef4444;border-color:#ef4444;color:#fff;box-shadow:0 0 0 6px rgba(239,68,68,.15),0 8px 24px rgba(239,68,68,.35)}
+#micBtn:disabled{opacity:.5;pointer-events:none}
+.hint{max-width:720px;margin:6px auto 0;color:#71717a;font-size:10px;padding:0 4px}
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="module">
-    // ---- FIXED LOADER SECTION ----
-    // This file is a slimmed-down, functionally-equivalent reconstruction of the
-    // uploaded artifact's app-level script, with the two import-map fixes applied:
-    //  1) The dynamically-injected <script type="importmap"> is now
-    //     type="importmap-shim" so es-module-shims actually manages it
-    //     (native import maps added after module execution has begun are ignored).
-    //  2) The dynamic import now uses window.importShim(...) instead of the
-    //     native import(...), and waits for importShim to exist before calling it.
-    import React from "https://esm.sh/react@18.3.1";
-    import ReactDOM from "https://esm.sh/react-dom@18.3.1/client";
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div style="font-weight:600">CronyGO Voice Test <span style="color:#71717a;font-weight:400">v0.1</span></div>
+    <span class="badge">GitHub Pages Ready</span>
+  </div>
+  <div id="status"><span id="dot" class="dot"></span><span id="statusText">初期化中...</span><span id="modelInfo" style="margin-left:auto;color:#52525b"></span></div>
+  <div style="margin-top:8px;color:#71717a;font-size:11px">1. マイクON → 2. 喋る → 3. VADが自動で区切ってWhisper tinyが文字起こし → 4. 自動送信 → 5. 固定返事を音声で返す</div>
+</header>
 
-    const e = React.createElement;
+<main id="chat">
+  <div class="msg ai">テスト用AIです。マイクボタンを押して喋ってください。聞き取った内容をテキストボックスに自動入力して送信します。</div>
+</main>
 
-    function loadScript(src, id) {
-      return new Promise((resolve, reject) => {
-        const existing = document.getElementById(id);
-        if (existing) {
-          if (existing._loaded) return resolve();
-          existing.addEventListener("load", () => resolve());
-          existing.addEventListener("error", reject);
-          if (existing.src) return;
-        }
-        const s = document.createElement("script");
-        s.id = id;
-        s.src = src;
-        s.async = true;
-        s._loaded = false;
-        s.onload = () => { s._loaded = true; resolve(); };
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
+<footer>
+  <div class="composer">
+    <div class="inputWrap">
+      <input id="inputEl" placeholder="モデル読み込み中..." autocomplete="off" />
+      <button id="sendBtn" style="width:32px;height:32px;border-radius:50%;border:0;background:#fff;color:#000;display:grid;place-items:center">↑</button>
+    </div>
+    <button id="micBtn" title="マイク開始">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z" fill="currentColor"/><path d="M19 10v1a7 7 0 0 1-14 0v-1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 19v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="hint">id: inputEl / micBtn · Offline after first load · VAD-Web + Xenova/whisper-tiny · HTTPS required for mic</div>
+</footer>
+
+<script type="module">
+// Fix for @xenova/transformers ESM on GitHub Pages - use dynamic import of the real ESM build
+import * as TransformersModule from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
+const { pipeline, env } = TransformersModule;
+// Allow remote models, no local model folder needed on Pages
+env.allowRemoteModels = true;
+env.allowLocalModels = false;
+
+const inputEl = document.getElementById('inputEl');
+const micBtn = document.getElementById('micBtn');
+const sendBtn = document.getElementById('sendBtn');
+const chat = document.getElementById('chat');
+const statusText = document.getElementById('statusText');
+const dot = document.getElementById('dot');
+const modelInfo = document.getElementById('modelInfo');
+
+let transcriber = null;
+let vadInstance = null;
+let isVoiceMode = false;
+let isTranscribing = false;
+
+function addMsg(text, role){
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.textContent = text;
+  chat.appendChild(div);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function setStatus(t, state){
+  statusText.textContent = t;
+  dot.className = 'dot' + (state ? ' ' + state : '');
+}
+
+async function initModel(){
+  setStatus('Whisper tiny 読み込み中... (39MB 初回のみ)', '');
+  modelInfo.textContent = 'Xenova/whisper-tiny';
+  try{
+    transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
+      quantized: true
+    });
+    setStatus('準備完了 - マイクを押してください', 'on');
+    inputEl.placeholder = '話すか、ここに入力...';
+  }catch(e){
+    console.error(e);
+    setStatus('モデル読み込み失敗: ' + e.message, '');
+    alert('モデル読み込み失敗: ' + e.message);
+  }
+}
+
+async function startVoiceMode(){
+  if(!transcriber){ alert('まだモデル読み込み中'); return; }
+  if(!window.vad){ alert('VADライブラリ読み込み失敗'); return; }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    stream.getTracks().forEach(t=>t.stop());
+  }catch(e){
+    alert('マイク許可が必要です: ' + e.message + '\nGitHub PagesはHTTPSなので設定から許可してください');
+    return;
+  }
+
+  isVoiceMode = true;
+  micBtn.classList.add('on');
+  micBtn.title = 'マイク停止';
+  setStatus('待機中... 喋ってください', 'hear');
+
+  vadInstance = await window.vad.MicVAD.new({
+    positiveSpeechThreshold: 0.9,
+    negativeSpeechThreshold: 0.75,
+    minSpeechFrames: 4,
+    onSpeechStart: ()=>{
+      if(speechSynthesis.speaking) return;
+      setStatus('聞き取り中...', 'hear');
+      dot.classList.add('hear');
+    },
+    onSpeechEnd: async (audio) => {
+      if(!isVoiceMode || isTranscribing) return;
+      if(speechSynthesis.speaking) return; // 自分の声を拾わない
+      isTranscribing = true;
+      setStatus('変換中... (Whisper)', '');
+      try{
+        // audio is Float32Array 16kHz from VAD
+        const result = await transcriber(audio, { language: 'japanese', task: 'transcribe' });
+        let text = (result.text || '').trim();
+        // 幻覚対策: 1文字以下や記号のみは捨てる
+        if(text.length <= 1){ isTranscribing = false; setStatus('待機中...', 'hear'); return; }
+        inputEl.value = text;
+        sendMessage();
+      }catch(e){
+        console.error(e);
+        setStatus('変換失敗: ' + e.message, '');
+      }finally{
+        isTranscribing = false;
+        if(isVoiceMode) setStatus('待機中...', 'hear');
+      }
+    },
+    onVADMisfire: ()=>{
+      setStatus('待機中... (声が短すぎました)', 'hear');
     }
+  });
+  vadInstance.start();
+}
 
-    async function ensureShimsAndImportMap() {
-      if (!document.getElementById("es-module-shims")) {
-        const s = document.createElement("script");
-        s.id = "es-module-shims";
-        s.async = true;
-        s.src = "https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js";
-        document.head.appendChild(s);
-        await new Promise((resolve, reject) => {
-          s.onload = () => resolve();
-          s.onerror = reject;
-        });
-      }
+function stopVoiceMode(){
+  isVoiceMode = false;
+  micBtn.classList.remove('on');
+  micBtn.title = 'マイク開始';
+  if(vadInstance){ vadInstance.pause(); }
+  setStatus('停止中', '');
+}
 
-      let mapTag = document.getElementById("transformers-importmap");
-      if (!mapTag) {
-        mapTag = document.createElement("script");
-        // FIX #1: use "importmap-shim" (not the native "importmap") so a
-        // map injected after module execution has started is still honored,
-        // and point at the actual browser build file, not the bare package root.
-        mapTag.type = "importmap-shim";
-        mapTag.id = "transformers-importmap";
-        mapTag.textContent = JSON.stringify({
-          imports: {
-            "@xenova/transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js"
-          }
-        });
-        document.head.appendChild(mapTag);
-        // give the shim a beat to register the map
-        await new Promise((resolve) => setTimeout(resolve, 150));
-      }
+function sendMessage(){
+  const text = inputEl.value.trim();
+  if(!text) return;
+  addMsg(text, 'user');
+  inputEl.value = '';
 
-      // FIX #2 (part A): wait for window.importShim to actually exist before using it.
-      for (let i = 0; i < 50 && !window.importShim; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      if (!window.importShim) {
-        throw new Error("es-module-shims failed to initialize (window.importShim not found)");
-      }
-    }
+  // 固定返事テンプレート
+  setTimeout(()=>{
+    const reply = 'こんにちは、音声テストです。聞こえていますよ！';
+    addMsg(reply, 'ai');
+    // 読み上げ - この間VADは一時的に無視
+    const uttr = new SpeechSynthesisUtterance(reply);
+    uttr.lang = 'ja-JP';
+    uttr.rate = 1.1;
+    uttr.onstart = ()=> setStatus('読み上げ中...', '');
+    uttr.onend = ()=> { if(isVoiceMode) setStatus('待機中...', 'hear'); };
+    speechSynthesis.speak(uttr);
+  }, 400);
+}
 
-    async function ensureVad() {
-      if (globalThis.vad || window.vad) return;
-      await loadScript(
-        "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js",
-        "vad-web-bundle"
-      );
-      for (let i = 0; i < 30; i++) {
-        if (window.vad) break;
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-    }
+micBtn.addEventListener('click', ()=>{
+  if(isVoiceMode) stopVoiceMode(); else startVoiceMode();
+});
+sendBtn.addEventListener('click', sendMessage);
+inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); sendMessage(); } });
 
-    const FIXED_REPLY = "こんにちは、音声テストです。聞こえていますよ！";
-
-    function App() {
-      const [messages, setMessages] = React.useState([
-        { role: "ai", text: "テスト準備完了。マイクボタンを押して話しかけてみてください。", time: "now" }
-      ]);
-      const [input, setInput] = React.useState("");
-      const [state, setState] = React.useState("idle"); // idle | listening | hearing | transcribing | speaking | loading_model
-      const [statusLabel, setStatusLabel] = React.useState("モデル準備中...");
-      const [micOn, setMicOn] = React.useState(false);
-      const [ready, setReady] = React.useState(false);
-      const [debug, setDebug] = React.useState("初期化中...");
-
-      const pipelineRef = React.useRef(null);
-      const vadRef = React.useRef(null);
-      const bottomRef = React.useRef(null);
-      const speakingRef = React.useRef(false);
-      const micOnRef = React.useRef(false);
-
-      React.useEffect(() => { micOnRef.current = micOn; }, [micOn]);
-      React.useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, [messages, state]);
-
-      React.useEffect(() => {
-        let cancelled = false;
-
-        (async () => {
-          try {
-            setState("loading_model");
-            setStatusLabel("Whisper tiny 読み込み中...");
-            setDebug("shim + importmap + vad-web 準備中...");
-
-            await ensureShimsAndImportMap();
-            if (cancelled) return;
-
-            await ensureVad();
-            if (cancelled) return;
-
-            setDebug("Xenova/transformers 読み込み中...");
-
-            // FIX #2 (part B): use the shim's dynamic import, not the native one,
-            // so the bare specifier "@xenova/transformers" resolves via the
-            // importmap-shim entry registered above.
-            const mod = await window.importShim("@xenova/transformers");
-            const pipeline = mod.pipeline || mod.default?.pipeline;
-            const env = mod.env || mod.default?.env;
-            if (env) {
-              env.allowLocalModels = false;
-              env.allowRemoteModels = true;
-            }
-            if (!pipeline) throw new Error("pipeline not found in @xenova/transformers");
-
-            setDebug("Xenova/whisper-tiny ダウンロード中... (初回 40MB前後)");
-            const asr = await pipeline("automatic-speech-recognition", "Xenova/whisper-tiny", {
-              quantized: true
-            });
-            if (cancelled) return;
-
-            pipelineRef.current = asr;
-            setReady(true);
-            setState("idle");
-            setStatusLabel("待機中...");
-            setDebug("準備完了。マイクONでVAD待機が始まります。");
-          } catch (err) {
-            console.error(err);
-            setDebug(`モデル読み込み失敗: ${err?.message || err}`);
-            setStatusLabel("読み込み失敗");
-            setState("idle");
-          }
-        })();
-
-        return () => { cancelled = true; try { vadRef.current?.destroy(); } catch {} };
-      }, []);
-
-      const pushMessage = (role, text) => {
-        const time = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
-        setMessages((prev) => [...prev, { role, text, time }]);
-      };
-
-      const speakFixedReply = async () => {
-        if (speakingRef.current) return;
-        speakingRef.current = true;
-        setState("speaking");
-        setStatusLabel("AI応答中...");
-        try { vadRef.current?.pause(); } catch {}
-
-        return new Promise((resolve) => {
-          const utter = new SpeechSynthesisUtterance(FIXED_REPLY);
-          utter.lang = "ja-JP";
-          utter.rate = 1.1;
-          utter.pitch = 1;
-          const voices = window.speechSynthesis.getVoices();
-          const jaVoice = voices.find((v) => v.lang.startsWith("ja")) || voices[0];
-          if (jaVoice) utter.voice = jaVoice;
-
-          const done = () => {
-            speakingRef.current = false;
-            setState(micOnRef.current ? "listening" : "idle");
-            setStatusLabel("待機中...");
-            try { if (micOnRef.current) vadRef.current?.start(); } catch {}
-            resolve();
-          };
-          utter.onend = done;
-          utter.onerror = done;
-          window.speechSynthesis.cancel();
-          window.speechSynthesis.speak(utter);
-        });
-      };
-
-      const sendMessage = async (overrideText) => {
-        const text = (overrideText ?? input).trim();
-        if (!text) return;
-        pushMessage("user", text);
-        setInput("");
-        setTimeout(async () => {
-          pushMessage("ai", FIXED_REPLY);
-          await speakFixedReply();
-        }, 400);
-      };
-
-      const toggleMic = async () => {
-        if (!ready) {
-          setDebug("モデルがまだ準備中です。少し待ってください。");
-          return;
-        }
-        if (micOn) {
-          setMicOn(false);
-          micOnRef.current = false;
-          try {
-            await vadRef.current?.pause();
-            vadRef.current?.destroy();
-          } catch {}
-          vadRef.current = null;
-          setState("idle");
-          setStatusLabel("待機中...");
-          setDebug("VAD停止");
-          return;
-        }
-
-        try {
-          setMicOn(true);
-          micOnRef.current = true;
-          setState("listening");
-          setStatusLabel("待機中... (話しかけてください)");
-          setDebug("マイク許可要求中...");
-
-          const myVad = await window.vad.MicVAD.new({
-            positiveSpeechThreshold: 0.75,
-            negativeSpeechThreshold: 0.35,
-            minSpeechFrames: 6,
-            preSpeechPadFrames: 5,
-            redemptionFrames: 8,
-            onSpeechStart: () => {
-              if (speakingRef.current) return;
-              setState("hearing");
-              setStatusLabel("聞き取り中...");
-            },
-            onSpeechEnd: async (audio) => {
-              if (speakingRef.current) return;
-              if (!pipelineRef.current) return;
-              if (!micOnRef.current) return;
-
-              setState("transcribing");
-              setStatusLabel("変換中...");
-              setDebug(`音声 ${(audio.length / 16000).toFixed(2)}s をWhisperで変換中...`);
-
-              try {
-                const result = await pipelineRef.current(audio, {
-                  language: "japanese",
-                  task: "transcribe",
-                  chunk_length_s: 30
-                });
-                let text = "";
-                if (typeof result === "string") text = result;
-                else if (result?.text) text = result.text;
-                text = text.trim();
-                setDebug(`変換結果: "${text}"`);
-
-                if (text.length < 1) {
-                  setState("listening");
-                  setStatusLabel("待機中... (聞き取れませんでした)");
-                  setTimeout(() => setStatusLabel("待機中..."), 1200);
-                  return;
-                }
-
-                const inputEl = document.getElementById("inputEl");
-                if (inputEl) inputEl.value = text;
-                setInput(text);
-                setTimeout(() => sendMessage(text), 50);
-              } catch (err) {
-                console.error(err);
-                setDebug(`変換エラー: ${err?.message || err}`);
-                setState("listening");
-                setStatusLabel("待機中...");
-              }
-            },
-            onVADMisfire: () => {
-              if (speakingRef.current) return;
-              setState("listening");
-              setStatusLabel("待機中...");
-            }
-          });
-
-          vadRef.current = myVad;
-          myVad.start();
-          setDebug("VAD待機開始。喋ると自動で送信されます。");
-        } catch (err) {
-          console.error(err);
-          setDebug(`マイク開始失敗: ${err?.message || err}. HTTPSとマイク許可を確認してください。`);
-          setMicOn(false);
-          setState("idle");
-          setStatusLabel("マイクエラー");
-        }
-      };
-
-      React.useEffect(() => {
-        window.speechSynthesis.getVoices();
-        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-      }, []);
-
-      const isListeningLike = state === "listening" || state === "hearing";
-      const isBusy = state === "transcribing" || state === "speaking" || state === "loading_model";
-
-      return e("div", {
-        style: {
-          minHeight: "100dvh",
-          background: "#0a0a0a",
-          color: "#f4f4f5",
-          display: "flex",
-          flexDirection: "column",
-          fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif'
-        }
-      },
-        e("header", { style: { borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "16px" } },
-          e("h1", { style: { fontSize: 15, fontWeight: 600, margin: 0 } }, "CronyGO Voice Test v0.1"),
-          e("p", { style: { fontSize: 11, color: "#71717a", margin: "4px 0 0" } }, "VAD + Whisper Tiny Test")
-        ),
-        e("div", { style: { padding: "12px 16px", fontSize: 11, color: "#a1a1aa" } },
-          e("span", null, statusLabel), " · ", e("span", null, debug)
-        ),
-        e("main", { style: { flex: 1, padding: "16px", paddingBottom: 120 } },
-          messages.map((m, i) =>
-            e("div", {
-              key: i,
-              style: {
-                display: "flex",
-                justifyContent: m.role === "user" ? "flex-end" : "flex-start",
-                marginBottom: 12
-              }
-            },
-              e("div", {
-                style: {
-                  maxWidth: "70%",
-                  borderRadius: 18,
-                  padding: "10px 14px",
-                  fontSize: 13.5,
-                  lineHeight: 1.6,
-                  background: m.role === "user" ? "#fff" : "#1a1a1a",
-                  color: m.role === "user" ? "#000" : "#f4f4f5",
-                  border: m.role === "user" ? "none" : "1px solid rgba(255,255,255,0.08)"
-                }
-              },
-                e("div", { style: { whiteSpace: "pre-wrap" } }, m.text),
-                e("div", { style: { fontSize: 10, color: "#71717a", marginTop: 6 } }, m.time)
-              )
-            )
-          ),
-          e("div", { ref: bottomRef })
-        ),
-        e("footer", {
-          style: {
-            position: "fixed", bottom: 0, left: 0, right: 0,
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(10,10,10,0.9)",
-            padding: 12, display: "flex", gap: 10, alignItems: "center"
-          }
-        },
-          e("input", {
-            id: "inputEl",
-            value: input,
-            onChange: (ev) => setInput(ev.target.value),
-            onKeyDown: (ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); sendMessage(); } },
-            placeholder: ready ? "話すか、ここに入力..." : "モデル読み込み中...",
-            style: {
-              flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 999, padding: "12px 16px", color: "#f4f4f5", outline: "none", fontSize: 14
-            }
-          }),
-          e("button", {
-            onClick: () => sendMessage(),
-            disabled: !input.trim(),
-            style: {
-              height: 40, width: 40, borderRadius: "50%", background: "#fff", color: "#000",
-              border: "none", opacity: input.trim() ? 1 : 0.3
-            }
-          }, "→"),
-          e("button", {
-            onClick: toggleMic,
-            disabled: state === "loading_model",
-            style: {
-              height: 48, width: 48, borderRadius: "50%",
-              background: micOn ? "#ef4444" : "#1f1f1f",
-              color: micOn ? "#fff" : "#d4d4d8",
-              border: "1px solid rgba(255,255,255,0.1)",
-              opacity: state === "loading_model" ? 0.5 : 1
-            }
-          }, micOn ? "■" : "●")
-        )
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById("root")).render(e(App));
-  </script>
-</body>
+initModel();
+</script>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
 </html>
