@@ -1,226 +1,713 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head><style>
-@font-face {
-  font-family: "Optimistic";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Optimistic Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
-}
-:where(html) {
-  font-family: "Optimistic", system-ui, sans-serif;
-}
-:where(code, pre, kbd, samp) {
-  font-family: "Optimistic Mono", ui-monospace, monospace;
-}
-</style>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>CronyGO Voice Test v0.1 - GitHub Pages</title>
-<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
-<script type="importmap">
-{
-  "imports": {
-    "@xenova/transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js"
-  }
-}
-</script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>CronyGO Voice Test v0.2</title>
+
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+JP:wght@400;500&display=swap');
-*{box-sizing:border-box} body{margin:0;background:#0a0a0a;color:#fff;font-family:'Inter','Noto Sans JP',sans-serif}
-header{position:sticky;top:0;z-index:10;background:rgba(10,10,10,.8);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.08);padding:14px 16px}
-.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:999px;padding:4px 10px;font-size:11px;color:#a1a1aa}
-#status{margin-top:10px;display:flex;gap:8px;align-items:center;font-size:12px;color:#a1a1aa}
-.dot{width:8px;height:8px;border-radius:50%;background:#71717a} .dot.on{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.2)} .dot.hear{background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.2);animation:pulse 1s infinite}
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
-main{max-width:720px;margin:0 auto;padding:18px 14px 120px}
-.msg{max-width:80%;padding:12px 14px;border-radius:18px;font-size:14px;line-height:1.6;margin:10px 0;white-space:pre-wrap;word-break:break-word}
-.user{margin-left:auto;background:#fff;color:#000;border-bottom-right-radius:6px}
-.ai{background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-bottom-left-radius:6px}
-footer{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.08);padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
-.composer{max-width:720px;margin:0 auto;display:flex;gap:10px;align-items:center}
-.inputWrap{flex:1;display:flex;align-items:center;gap:8px;height:50px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06)}
-.inputWrap input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:14px}
-#micBtn{width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:#1f1f1f;color:#e4e4e7;display:grid;place-items:center;cursor:pointer;transition:.15s}
-#micBtn.on{background:#ef4444;border-color:#ef4444;color:#fff;box-shadow:0 0 0 6px rgba(239,68,68,.15),0 8px 24px rgba(239,68,68,.35)}
-#micBtn:disabled{opacity:.5;pointer-events:none}
-.hint{max-width:720px;margin:6px auto 0;color:#71717a;font-size:10px;padding:0 4px}
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0a0a0a;
+  color: white;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Noto Sans JP",
+    sans-serif;
+}
+
+header {
+  padding: 16px;
+  border-bottom: 1px solid #222;
+  position: sticky;
+  top: 0;
+  background: rgba(10,10,10,.9);
+  backdrop-filter: blur(16px);
+  z-index: 10;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.version {
+  color: #666;
+  font-weight: 400;
+}
+
+#status {
+  margin-top: 10px;
+  color: #aaa;
+  font-size: 13px;
+}
+
+#modelInfo {
+  margin-top: 4px;
+  color: #555;
+  font-size: 11px;
+}
+
+main {
+  max-width: 720px;
+  margin: auto;
+  padding: 20px 14px 130px;
+}
+
+.msg {
+  max-width: 82%;
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 18px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai {
+  background: #1a1a1a;
+  border: 1px solid #292929;
+  border-bottom-left-radius: 6px;
+}
+
+.user {
+  margin-left: auto;
+  background: white;
+  color: black;
+  border-bottom-right-radius: 6px;
+}
+
+footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  background: rgba(10,10,10,.94);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid #222;
+}
+
+.controls {
+  max-width: 720px;
+  margin: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.input {
+  flex: 1;
+  height: 50px;
+  border-radius: 999px;
+  border: 1px solid #333;
+  background: #151515;
+  color: white;
+  padding: 0 16px;
+  outline: none;
+  font-size: 14px;
+}
+
+.input:focus {
+  border-color: #666;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+#sendBtn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: white;
+  color: black;
+  font-size: 20px;
+}
+
+#micBtn {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #202020;
+  color: white;
+  border: 1px solid #333;
+  font-size: 22px;
+}
+
+#micBtn.recording {
+  background: #ef4444;
+}
+
+#micBtn:disabled,
+#sendBtn:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.hint {
+  max-width: 720px;
+  margin: 7px auto 0;
+  color: #666;
+  font-size: 10px;
+  padding-left: 4px;
+}
 </style>
 </head>
+
 <body>
+
 <header>
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="font-weight:600">CronyGO Voice Test <span style="color:#71717a;font-weight:400">v0.1</span></div>
-    <span class="badge">GitHub Pages Ready</span>
+
+  <div class="title">
+    CronyGO Voice Test
+    <span class="version">v0.2</span>
   </div>
-  <div id="status"><span id="dot" class="dot"></span><span id="statusText">初期化中...</span><span id="modelInfo" style="margin-left:auto;color:#52525b"></span></div>
-  <div style="margin-top:8px;color:#71717a;font-size:11px">1. マイクON → 2. 喋る → 3. VADが自動で区切ってWhisper tinyが文字起こし → 4. 自動送信 → 5. 固定返事を音声で返す</div>
+
+  <div id="status">
+    Whisper読み込み中...
+  </div>
+
+  <div id="modelInfo">
+    Xenova/whisper-tiny
+  </div>
+
 </header>
 
+
 <main id="chat">
-  <div class="msg ai">テスト用AIです。マイクボタンを押して喋ってください。聞き取った内容をテキストボックスに自動入力して送信します。</div>
+
+  <div class="msg ai">
+    音声入力テストです。
+
+    マイクボタンを押すと録音開始。
+    もう一度押すと録音終了。
+
+    その後、Whisper tinyで日本語を文字起こしします。
+  </div>
+
 </main>
 
+
 <footer>
-  <div class="composer">
-    <div class="inputWrap">
-      <input id="inputEl" placeholder="モデル読み込み中..." autocomplete="off" />
-      <button id="sendBtn" style="width:32px;height:32px;border-radius:50%;border:0;background:#fff;color:#000;display:grid;place-items:center">↑</button>
-    </div>
-    <button id="micBtn" title="マイク開始">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z" fill="currentColor"/><path d="M19 10v1a7 7 0 0 1-14 0v-1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 19v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+
+  <div class="controls">
+
+    <input
+      id="inputEl"
+      class="input"
+      placeholder="ここに文字を入力..."
+      autocomplete="off"
+    >
+
+    <button id="sendBtn">
+      ↑
     </button>
+
+    <button id="micBtn">
+      🎤
+    </button>
+
   </div>
-  <div class="hint">id: inputEl / micBtn · Offline after first load · VAD-Web + Xenova/whisper-tiny · HTTPS required for mic</div>
+
+  <div class="hint">
+    Whisper tiny / Web Audio API / VADなし / HTTPS必須
+  </div>
+
 </footer>
 
+
 <script type="module">
-// Fix for @xenova/transformers ESM on GitHub Pages - use dynamic import of the real ESM build
-import * as TransformersModule from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
-const { pipeline, env } = TransformersModule;
-// Allow remote models, no local model folder needed on Pages
+
+import {
+  pipeline,
+  env
+} from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js";
+
+
+/* =========================
+   Transformers.js設定
+========================= */
+
 env.allowRemoteModels = true;
 env.allowLocalModels = false;
 
-const inputEl = document.getElementById('inputEl');
-const micBtn = document.getElementById('micBtn');
-const sendBtn = document.getElementById('sendBtn');
-const chat = document.getElementById('chat');
-const statusText = document.getElementById('statusText');
-const dot = document.getElementById('dot');
-const modelInfo = document.getElementById('modelInfo');
+
+/* =========================
+   DOM
+========================= */
+
+const statusEl = document.getElementById("status");
+const inputEl = document.getElementById("inputEl");
+const sendBtn = document.getElementById("sendBtn");
+const micBtn = document.getElementById("micBtn");
+const chat = document.getElementById("chat");
+
+
+/* =========================
+   状態
+========================= */
 
 let transcriber = null;
-let vadInstance = null;
-let isVoiceMode = false;
-let isTranscribing = false;
 
-function addMsg(text, role){
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
+let audioContext = null;
+let mediaStream = null;
+let sourceNode = null;
+let processorNode = null;
+
+let recording = false;
+let audioChunks = [];
+
+
+/* =========================
+   メッセージ
+========================= */
+
+function addMessage(text, type) {
+
+  const div = document.createElement("div");
+
+  div.className = "msg " + type;
+
   div.textContent = text;
+
   chat.appendChild(div);
-  window.scrollTo(0, document.body.scrollHeight);
+
+  window.scrollTo(
+    0,
+    document.body.scrollHeight
+  );
 }
 
-function setStatus(t, state){
-  statusText.textContent = t;
-  dot.className = 'dot' + (state ? ' ' + state : '');
+
+/* =========================
+   ステータス
+========================= */
+
+function setStatus(text) {
+
+  statusEl.textContent = text;
+
 }
 
-async function initModel(){
-  setStatus('Whisper tiny 読み込み中... (39MB 初回のみ)', '');
-  modelInfo.textContent = 'Xenova/whisper-tiny';
-  try{
-    transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
-      quantized: true
-    });
-    setStatus('準備完了 - マイクを押してください', 'on');
-    inputEl.placeholder = '話すか、ここに入力...';
-  }catch(e){
-    console.error(e);
-    setStatus('モデル読み込み失敗: ' + e.message, '');
-    alert('モデル読み込み失敗: ' + e.message);
-  }
-}
 
-async function startVoiceMode(){
-  if(!transcriber){ alert('まだモデル読み込み中'); return; }
-  if(!window.vad){ alert('VADライブラリ読み込み失敗'); return; }
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    stream.getTracks().forEach(t=>t.stop());
-  }catch(e){
-    alert('マイク許可が必要です: ' + e.message + '\nGitHub PagesはHTTPSなので設定から許可してください');
-    return;
-  }
+/* =========================
+   Whisper読み込み
+========================= */
 
-  isVoiceMode = true;
-  micBtn.classList.add('on');
-  micBtn.title = 'マイク停止';
-  setStatus('待機中... 喋ってください', 'hear');
+async function loadWhisper() {
 
-  vadInstance = await window.vad.MicVAD.new({
-    positiveSpeechThreshold: 0.9,
-    negativeSpeechThreshold: 0.75,
-    minSpeechFrames: 4,
-    onSpeechStart: ()=>{
-      if(speechSynthesis.speaking) return;
-      setStatus('聞き取り中...', 'hear');
-      dot.classList.add('hear');
-    },
-    onSpeechEnd: async (audio) => {
-      if(!isVoiceMode || isTranscribing) return;
-      if(speechSynthesis.speaking) return; // 自分の声を拾わない
-      isTranscribing = true;
-      setStatus('変換中... (Whisper)', '');
-      try{
-        // audio is Float32Array 16kHz from VAD
-        const result = await transcriber(audio, { language: 'japanese', task: 'transcribe' });
-        let text = (result.text || '').trim();
-        // 幻覚対策: 1文字以下や記号のみは捨てる
-        if(text.length <= 1){ isTranscribing = false; setStatus('待機中...', 'hear'); return; }
-        inputEl.value = text;
-        sendMessage();
-      }catch(e){
-        console.error(e);
-        setStatus('変換失敗: ' + e.message, '');
-      }finally{
-        isTranscribing = false;
-        if(isVoiceMode) setStatus('待機中...', 'hear');
+  try {
+
+    setStatus(
+      "Whisper tiny 読み込み中..."
+    );
+
+    transcriber = await pipeline(
+      "automatic-speech-recognition",
+      "Xenova/whisper-tiny",
+      {
+        quantized: true
       }
-    },
-    onVADMisfire: ()=>{
-      setStatus('待機中... (声が短すぎました)', 'hear');
+    );
+
+    setStatus(
+      "準備完了。マイクを押してください"
+    );
+
+    inputEl.placeholder =
+      "話すか、ここに入力...";
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    setStatus(
+      "Whisper読み込み失敗: " +
+      error.message
+    );
+
+  }
+
+}
+
+
+/* =========================
+   録音開始
+========================= */
+
+async function startRecording() {
+
+  if (!transcriber) {
+
+    alert(
+      "Whisperの読み込みがまだ終わっていません"
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    mediaStream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
+  }
+
+  catch (error) {
+
+    alert(
+      "マイクを使用できません。\n\n" +
+      error.message
+    );
+
+    return;
+
+  }
+
+
+  audioContext =
+    new AudioContext({
+      sampleRate: 16000
+    });
+
+
+  sourceNode =
+    audioContext.createMediaStreamSource(
+      mediaStream
+    );
+
+
+  processorNode =
+    audioContext.createScriptProcessor(
+      4096,
+      1,
+      1
+    );
+
+
+  audioChunks = [];
+
+
+  processorNode.onaudioprocess =
+    function(event) {
+
+      const input =
+        event.inputBuffer.getChannelData(0);
+
+      audioChunks.push(
+        new Float32Array(input)
+      );
+
+    };
+
+
+  sourceNode.connect(
+    processorNode
+  );
+
+
+  processorNode.connect(
+    audioContext.destination
+  );
+
+
+  recording = true;
+
+  micBtn.classList.add("recording");
+
+  micBtn.textContent = "⏹";
+
+  setStatus(
+    "録音中... もう一度押すと終了"
+  );
+
+}
+
+
+/* =========================
+   録音停止
+========================= */
+
+async function stopRecording() {
+
+  recording = false;
+
+  micBtn.classList.remove(
+    "recording"
+  );
+
+  micBtn.textContent = "🎤";
+
+  setStatus(
+    "音声データを処理中..."
+  );
+
+
+  if (processorNode) {
+
+    processorNode.disconnect();
+
+  }
+
+
+  if (sourceNode) {
+
+    sourceNode.disconnect();
+
+  }
+
+
+  if (mediaStream) {
+
+    mediaStream
+      .getTracks()
+      .forEach(track => track.stop());
+
+  }
+
+
+  if (audioContext) {
+
+    await audioContext.close();
+
+  }
+
+
+  /* =====================
+     Float32Arrayを結合
+  ===================== */
+
+  let totalLength = 0;
+
+  for (const chunk of audioChunks) {
+
+    totalLength += chunk.length;
+
+  }
+
+
+  const audio =
+    new Float32Array(totalLength);
+
+
+  let offset = 0;
+
+  for (const chunk of audioChunks) {
+
+    audio.set(
+      chunk,
+      offset
+    );
+
+    offset += chunk.length;
+
+  }
+
+
+  audioChunks = [];
+
+
+  if (audio.length < 1000) {
+
+    setStatus(
+      "録音が短すぎます"
+    );
+
+    return;
+
+  }
+
+
+  /* =====================
+     Whisper
+  ===================== */
+
+  try {
+
+    setStatus(
+      "Whisperで文字起こし中..."
+    );
+
+
+    const result =
+      await transcriber(
+        audio,
+        {
+          language: "japanese",
+          task: "transcribe"
+        }
+      );
+
+
+    const text =
+      (result.text || "").trim();
+
+
+    if (!text) {
+
+      setStatus(
+        "文字を認識できませんでした"
+      );
+
+      return;
+
     }
-  });
-  vadInstance.start();
+
+
+    inputEl.value = text;
+
+    setStatus(
+      "文字起こし完了"
+    );
+
+
+    /* 自動送信 */
+
+    sendMessage();
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    setStatus(
+      "文字起こし失敗: " +
+      error.message
+    );
+
+  }
+
 }
 
-function stopVoiceMode(){
-  isVoiceMode = false;
-  micBtn.classList.remove('on');
-  micBtn.title = 'マイク開始';
-  if(vadInstance){ vadInstance.pause(); }
-  setStatus('停止中', '');
-}
 
-function sendMessage(){
-  const text = inputEl.value.trim();
-  if(!text) return;
-  addMsg(text, 'user');
-  inputEl.value = '';
+/* =========================
+   送信
+========================= */
 
-  // 固定返事テンプレート
-  setTimeout(()=>{
-    const reply = 'こんにちは、音声テストです。聞こえていますよ！';
-    addMsg(reply, 'ai');
-    // 読み上げ - この間VADは一時的に無視
-    const uttr = new SpeechSynthesisUtterance(reply);
-    uttr.lang = 'ja-JP';
-    uttr.rate = 1.1;
-    uttr.onstart = ()=> setStatus('読み上げ中...', '');
-    uttr.onend = ()=> { if(isVoiceMode) setStatus('待機中...', 'hear'); };
-    speechSynthesis.speak(uttr);
+function sendMessage() {
+
+  const text =
+    inputEl.value.trim();
+
+
+  if (!text) return;
+
+
+  addMessage(
+    text,
+    "user"
+  );
+
+
+  inputEl.value = "";
+
+
+  /* 固定返答 */
+
+  setTimeout(() => {
+
+    const reply =
+      "こんにちは、音声テストです。聞こえていますよ！";
+
+
+    addMessage(
+      reply,
+      "ai"
+    );
+
+
+    /* =================
+       TTS
+    ================= */
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        reply
+      );
+
+
+    utterance.lang = "ja-JP";
+
+    utterance.rate = 1.1;
+
+
+    speechSynthesis.speak(
+      utterance
+    );
+
   }, 400);
+
 }
 
-micBtn.addEventListener('click', ()=>{
-  if(isVoiceMode) stopVoiceMode(); else startVoiceMode();
-});
-sendBtn.addEventListener('click', sendMessage);
-inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); sendMessage(); } });
 
-initModel();
+/* =========================
+   ボタン
+========================= */
+
+micBtn.addEventListener(
+  "click",
+  () => {
+
+    if (recording) {
+
+      stopRecording();
+
+    }
+    else {
+
+      startRecording();
+
+    }
+
+  }
+);
+
+
+sendBtn.addEventListener(
+  "click",
+  sendMessage
+);
+
+
+inputEl.addEventListener(
+  "keydown",
+  event => {
+
+    if (event.key === "Enter") {
+
+      event.preventDefault();
+
+      sendMessage();
+
+    }
+
+  }
+);
+
+
+/* =========================
+   起動
+========================= */
+
+loadWhisper();
+
 </script>
-<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
+
+</body>
 </html>
